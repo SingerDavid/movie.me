@@ -1,7 +1,7 @@
 Name: David Singer
 Email: dsinger1@hawk.iit.edu
 ITMD-542-02 Full-Stack Web Development - Final Project
-Git Repository: https://github.com/SingerDavid/movie.me
+Git Repository: https://github.com/SingerDavid/movie.me/tree/api
 Development Environment:
 - This is a Node JS Express Generated Application utilizing REST API architecture and follows the PUG html template styles. The backend connects to a serverless DB system called Atlas utilizing MongoDB DB.
 Installation:
