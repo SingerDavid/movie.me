@@ -46,10 +46,23 @@ router.get('/login', function(req, res, next) {
 });
 
 /* POST local login */
-router.post('/login', passport.authenticate('local', {
-    successRedirect: '/users',
-    failureRedirect: '/login',
-}));
+router.post('/login', function(req, res, next) {
+  passport.authenticate('local', function(err, user, info) {
+    if (err) {
+      return next(err);
+    }
+    if (!user) {
+      const errorMessage = 'Incorrect username or password';
+      return res.render('login', { errorMessage: errorMessage });
+    }
+    req.logIn(user, function(err) {
+      if (err) {
+        return next(err);
+      }
+      return res.redirect('/users');
+    });
+  })(req, res, next);
+});
 
 /* POST logout */
 router.post('/logout', function(req, res, next) {
@@ -72,25 +85,25 @@ router.post('/signup', async function(req, res, next) {
       // check if user already exists
       const existingUser = await User.findOne({ email: email });
       if (existingUser) {
-        return res.status(400).json({ message: 'Email already registered' });
+        res.render('signup', { message: 'Email already registered' });
+      } else {
+        // create new user
+        const newUser = new User({
+          email: email,
+          password: password,
+        });
+
+        // save user to database
+        await newUser.save();
+
+        // log in user
+        req.login(newUser, function(err) {
+          if (err) {
+            return next(err);
+          }
+          res.redirect('/users');
+        });
       }
-
-      // create new user
-      const newUser = new User({
-        email: email,
-        password: password,
-      });
-
-      // save user to database
-      await newUser.save();
-
-      // log in user
-      req.login(newUser, function(err) {
-        if (err) {
-          return next(err);
-        }
-        return res.redirect('/users');
-      });
     } catch (error) {
       console.log(error);
       return next(error);

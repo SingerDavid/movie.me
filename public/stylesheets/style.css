@@ -94,6 +94,7 @@ ul.list-group.list-group-flush {
   list-style: none;
   padding: 0;
   padding-bottom: 1em;
+  justify-content: flex-start;
 }
 
 ul.list-group.list-group-flush li {
@@ -102,6 +103,7 @@ ul.list-group.list-group-flush li {
   padding: 5px 10px;
   background-color: #3877ff;
   border-radius: 5px;
+  white-space: nowrap;
 }
 
 .card-body {
@@ -376,6 +378,51 @@ select:focus {
 
 #movies-form-container button[type='submit']:hover {
   background-color: #0069d9;
+}
+
+#loader {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+#loader::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 45%;
+  left: calc(50% - 30px);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 6px solid #f3f3f3;
+  border-top-color: #3498db;
+  animation: spin 1s ease-in-out infinite;
+}
+
+#loading-text {
+  display: block;
+  position: absolute;
+  top: calc(50% + 40px);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.918);
+  padding: 10px;
+  color: #faf3f3;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* results page */

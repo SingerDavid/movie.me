@@ -5,6 +5,8 @@ block content
 
   h1 Login
   form(action="/login", method="POST")
+    if errorMessage
+      div.alert.alert-danger= errorMessage
     section
       label(for="email") Email:
       input(type="email", name="email", required)

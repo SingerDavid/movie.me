@@ -69,13 +69,15 @@ async function runCompletion (prompt) {
         const movies = parsedData.movies;
 
         const reformattedMovies = movies.map(movie => {
-            return {
-                title: movie.title,
-                year: movie.release_year,
-                genre: movie.genre,
-                description: movie.description,
-                watchLocations: movie.where_to_watch.split(', ')
-            };
+
+          const watchLocations = movie.where_to_watch ? movie.where_to_watch.split(', ') : 'Unable to Locate';
+          return {
+              title: movie.title,
+              year: movie.release_year,
+              genre: movie.genre,
+              description: movie.description,
+              watchLocations: watchLocations
+          };
         });
 
         return reformattedMovies;
@@ -112,10 +114,15 @@ router.post('/', async function(req, res, next) {
   }
 
   prompt = `My current top favorite movies are ${movieSearch}. Here is some other search criteria I want -> genre: ${genre}, release year: ${yearRange}, actor: ${actor}, and some additional detail I want: ${description}. Please give me the output in JSON format with movie title | release year | genre type  | where to watch the movie but split each with a comma | short description. Just give me the JSON format, no other text.`;
-  const recommendedMovies = await runCompletion(prompt);
 
-  console.log("Recommended movies: ", recommendedMovies);
-  res.render('results', { title: 'User Profile', recommendedMovies, searchType, genre, yearRange, actor, description });
+  try {
+    const recommendedMovies = await runCompletion(prompt);
+    console.log("Recommended movies: ", recommendedMovies);
+    res.render('results', { title: 'User Profile', recommendedMovies, searchType, genre, yearRange, actor, description });
+  } catch (err) {
+    console.error(err);
+    res.render('results', { title: 'User Profile', recommendedMovies: [], searchType, genre, yearRange, actor, description, error: 'Sorry, we are experiencing high API demand. Please try again later. Our movie gods need time to sort their files.' });
+  }
 });
 
 router.post('/addToWatch', async (req, res) => {

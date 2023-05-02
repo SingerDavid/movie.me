@@ -45,7 +45,8 @@ html
                   img.card-img-top(src='https://via.placeholder.com/200x300?text=Movie+Poster', alt='Movie Poster', style='max-height: 200px; max-width: 100%;')
                   .card-body.text-center
                     h5.card-title.text-truncate= movie.title
-                    p.card-text.text-muted.text-truncate= `${movie.year} - ${movie.genre}`
+                    p.card-text.text-muted.text-truncate= movie.year
+                      span.card-text.text-muted.text-truncate= `- ${movie.genre}`
                     p.movie-description= movie.description
                     h6 Places to watch:
                     ul.list-group.list-group-flush
@@ -53,5 +54,8 @@ html
                         li.list-group-item(style='color: white;')= location
                     button.btn.btn-primary.btn-block.add-favorite-button(onclick=`addToWatchList(event, "${movie.title}", "${movie.year}", "${movie.genre}", "${movie.description}", ${JSON.stringify(movie.watchLocations)})`) Add to Watch List!
           else
-            p No recommendations found.
+            if error
+              p.alert.alert-danger= error
+            else
+              p No recommendations found.
 script(src='/javascripts/results.js')
