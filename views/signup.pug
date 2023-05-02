@@ -1,0 +1,16 @@
+extends layout
+
+block content
+  link(rel='stylesheet', href='/stylesheets/login.css')
+  h1 Sign Up
+  form(action="/signup", method="POST")
+    section
+      label(for="email") Email:
+      input(type="email", name="email", required)
+    section
+      label(for="password") Password:
+      input(type="password", name="password", required)
+    button(type="submit") Sign Up
+    div.signup-container
+      p.dont-have-account already have an account?
+      a.signup-link(href="/login") Login
