@@ -1,39 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('../models/User');
+const { Configuration, OpenAIApi } = require('openai');
 
-const moviedata = [
-  {
-    title: 'The Shawshank Redemption',
-    year: 1994,
-    genre: 'Drama',
-    watchLocations: ['Netflix', 'Amazon Prime'],
-    description: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.'
-  },
-  {
-    title: 'The Godfather',
-    year: 1972,
-    genre: 'Drama',
-    watchLocations: ['Netflix', 'HBO Max'],
-    description: 'An organized crime dynasty\'s aging patriarch transfers control of his clandestine empire to his reluctant son.'
-  },
-  {
-    title: 'The Dark Knight',
-    year: 2008,
-    genre: 'Action',
-    watchLocations: ['Netflix', 'Amazon Prime'],
-    description: 'The Joker wreaks havoc on Gotham City and pushes Batman to his limits.'
-  },
-  {
-    title: 'Inception',
-    year: 2010,
-    genre: 'Sci-Fi',
-    watchLocations: ['HBO Max', 'Google Play'],
-    description: 'A thief enters people\'s dreams to steal their secrets in this mind-bending thriller.'
-  }
-]
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
@@ -42,35 +14,108 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/login');
 }
 
-/* GET results page. */
-router.get('/', ensureAuthenticated, function(req, res, next) {
-  console.log(req.session);
-  //const user = req.user; // Passport adds the user object to the request object and pull data from session
-  //const likedMovies = user.likedMovies || []; // get the likedMovies array, or an empty array if it does not exist - error prevention
-  const recommendedMovies = moviedata;
-  const searchType = req.body.searchType;
-  const genre = req.body.genre;
-  const yearRange = req.body.yearRange;
-  const actor = req.body.actor;
-  const description = req.body.description;
+const configuration = new Configuration({
+  organization: "org-S8HBoa7hQyYEgYNOpXeFY2p0",
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-  console.log("Results from form: ", searchType, genre, yearRange, description);
-  res.render('results', { title: 'User Profile', recommendedMovies :  recommendedMovies, searchType : searchType, genre : genre, yearRange : yearRange, actor : actor, description : description });
+const openai = new OpenAIApi(configuration);
+
+console.log(openai);
+
+// const moviedata = [
+//   {
+//     title: 'The Shawshank Redemption',
+//     year: 1994,
+//     genre: 'Drama',
+//     watchLocations: ['Netflix', 'Amazon Prime'],
+//     description: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.'
+//   },
+//   {
+//     title: 'The Godfather',
+//     year: 1972,
+//     genre: 'Drama',
+//     watchLocations: ['Netflix', 'HBO Max'],
+//     description: 'An organized crime dynasty\'s aging patriarch transfers control of his clandestine empire to his reluctant son.'
+//   },
+//   {
+//     title: 'The Dark Knight',
+//     year: 2008,
+//     genre: 'Action',
+//     watchLocations: ['Netflix', 'Amazon Prime'],
+//     description: 'The Joker wreaks havoc on Gotham City and pushes Batman to his limits.'
+//   },
+//   {
+//     title: 'Inception',
+//     year: 2010,
+//     genre: 'Sci-Fi',
+//     watchLocations: ['HBO Max', 'Google Play'],
+//     description: 'A thief enters people\'s dreams to steal their secrets in this mind-bending thriller.'
+//   }
+// ]
+
+async function runCompletion (prompt) {
+    const completion = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo",
+    messages: [{"role": "system", "content":"I am a movie expert, give me some information and I will find some movies curated to you!"},{'role': 'user', 'content': prompt}],
+  });
+    console.log(completion.data.choices[0].message);
+    console.log(completion.data.choices[0].message.content);
+
+    const jsonString = completion.data.choices[0].message.content;
+
+    function extractMovies(jsonString) {
+        const parsedData = JSON.parse(jsonString);
+        const movies = parsedData.movies;
+
+        const reformattedMovies = movies.map(movie => {
+            return {
+                title: movie.title,
+                year: movie.release_year,
+                genre: movie.genre,
+                description: movie.description,
+                watchLocations: movie.where_to_watch.split(', ')
+            };
+        });
+
+        return reformattedMovies;
+    }
+    const results = extractMovies(jsonString);
+    console.log(results);
+    return results;
+}
+
+
+/* GET results page. */
+router.get('/', ensureAuthenticated, async function(req, res, next) {
+  res.render('results', { title: 'User Profile', recommendedMovies: [], searchType: '', genre: '', yearRange: '', actor: '', description: '' });
 });
 
 /* POST results page. */
-router.post('/', function(req, res, next) {
-  //const user = req.user; // Passport adds the user object to the request object and pull data from session
-  //const likedMovies = user.likedMovies || []; // get the likedMovies array, or an empty array if it does not exist - error prevention
-  const recommendedMovies = moviedata;
-  const searchType = req.body.searchType;
-  const genre = req.body.genre;
-  const yearRange = req.body.yearRange;
-  const actor = req.body.actor;
-  const description = req.body.description;
+router.post('/', async function(req, res, next) {
+  const user = await User.findById(req.user._id);
+  const favoriteMovies = user.likedMovies || [];
+  const likedMovies = user.recommendedMovies || [];
+  const { searchType, genre, yearRange, actor, description } = req.body;
 
-    console.log("Results from form: ", searchType, genre, yearRange, description);
-    res.render('results', { title: 'User Profile', recommendedMovies :  recommendedMovies, searchType : searchType, genre : genre, yearRange : yearRange, actor : actor, description : description });
+  movieSearch = '';
+  if (searchType === "favorite movies") {
+    movieSearch = favoriteMovies.join(", ");
+  } else {
+    let titles = '';
+    likedMovies.forEach(movie => {
+      titles += movie.title + ', ';
+    });
+    // Remove the last comma and space
+    titles = titles.slice(0, -2);
+    movieSearch = likedMovies.join(", ");
+  }
+
+  prompt = `My current top favorite movies are ${movieSearch}. Here is some other search criteria I want -> genre: ${genre}, release year: ${yearRange}, actor: ${actor}, and some additional detail I want: ${description}. Please give me the output in JSON format with movie title | release year | genre type  | where to watch the movie but split each with a comma | short description. Just give me the JSON format, no other text.`;
+  const recommendedMovies = await runCompletion(prompt);
+
+  console.log("Recommended movies: ", recommendedMovies);
+  res.render('results', { title: 'User Profile', recommendedMovies, searchType, genre, yearRange, actor, description });
 });
 
 router.post('/addToWatch', async (req, res) => {

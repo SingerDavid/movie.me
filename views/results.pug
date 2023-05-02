@@ -38,18 +38,20 @@ html
             td #{description}
       div.container.my-4.container-recommended#results-container
         .row.row-cols-1.row-cols-sm-2.row-cols-md-3.row-cols-lg-4
-          each movie in recommendedMovies
-            .col.mb-4
-              .card.h-100
-                img.card-img-top(src='https://via.placeholder.com/200x300?text=Movie+Poster', alt='Movie Poster', style='max-height: 200px; max-width: 100%;')
-                .card-body.text-center
-                  h5.card-title.text-truncate= movie.title
-                  p.card-text.text-muted.text-truncate= `${movie.year} - ${movie.genre}`
-                  p.movie-description= movie.description
-                  h6 Places to watch:
-                  ul.list-group.list-group-flush
-                    each location in movie.watchLocations
-                      li.list-group-item(style='color: white;')= location
-                  button.btn.btn-primary.btn-block.add-favorite-button(onclick=`addToWatchList(event, "${movie.title}", "${movie.year}", "${movie.genre}", "${movie.description}", ${JSON.stringify(movie.watchLocations)})`) Add to Watch List!
-
+          if recommendedMovies
+            each movie in recommendedMovies
+              .col.mb-4
+                .card.h-100
+                  img.card-img-top(src='https://via.placeholder.com/200x300?text=Movie+Poster', alt='Movie Poster', style='max-height: 200px; max-width: 100%;')
+                  .card-body.text-center
+                    h5.card-title.text-truncate= movie.title
+                    p.card-text.text-muted.text-truncate= `${movie.year} - ${movie.genre}`
+                    p.movie-description= movie.description
+                    h6 Places to watch:
+                    ul.list-group.list-group-flush
+                      each location in movie.watchLocations
+                        li.list-group-item(style='color: white;')= location
+                    button.btn.btn-primary.btn-block.add-favorite-button(onclick=`addToWatchList(event, "${movie.title}", "${movie.year}", "${movie.genre}", "${movie.description}", ${JSON.stringify(movie.watchLocations)})`) Add to Watch List!
+          else
+            p No recommendations found.
 script(src='/javascripts/results.js')
